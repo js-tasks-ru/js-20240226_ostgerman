@@ -4,6 +4,11 @@
  * @param {...string} fields - the properties paths to pick
  * @returns {object} - returns the new object
  */
-export const pick = (obj, ...fields) => {
-
+export const pick = (obj, ...fields) => {  
+  return fields?.reduce((res, key) => {
+    if (obj?.hasOwnProperty(key)) {
+      res[key] = obj[key];
+    }
+    return res;
+  }, {}) || {};  
 };
