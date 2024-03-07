@@ -7,10 +7,10 @@ export function createGetter(path) {
   const pathArray = path.split('.');
   return (obj) => {
     for (path of pathArray) {
-      obj = obj[path];
-      if (typeof obj === 'undefined') {
-        return undefined;
+      if (typeof obj !== 'object' || obj === null) {
+        return;
       }
+      obj = obj[path];
     }
     return obj;
   };

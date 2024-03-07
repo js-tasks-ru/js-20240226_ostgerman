@@ -56,4 +56,11 @@ describe('objects-arrays-intro-to-testing/create-getter', () => {
 
     expect(getter({more: {nested: {property: 1}}})).toEqual(1);
   });
+
+  it('returns undefined for non-object or null properties in the middle of the path', () => {
+    const getter = createGetter('some.long.property.path');
+
+    expect(getter({some: {long: 42}})).toBeUndefined();
+    expect(getter({some: {long: null}})).toBeUndefined();
+  });
 });
