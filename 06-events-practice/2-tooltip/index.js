@@ -52,7 +52,7 @@ class Tooltip {
     this.remove();
   }
 
-  handleMouseMove = (event) => {
+  handlePointerMove = (event) => {
     this.setPosition(event.clientX, event.clientY);
   }
 
@@ -67,11 +67,11 @@ class Tooltip {
   }
 
   setPositionEventListeners() {
-    document.addEventListener('mousemove', this.handleMouseMove);
+    document.addEventListener('pointermove', this.handlePointerMove);
   }
 
   removePositionEventListeners() {
-    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('pointermove', this.handlePointerMove);
   }
 
   remove() {
