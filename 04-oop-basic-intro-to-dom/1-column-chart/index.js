@@ -76,6 +76,7 @@ export default class ColumnChart {
 
   update(newData) {
     this.data = newData;
+    this.element.classList = this.createChartClasses();
     this.element.querySelector('[data-element="body"]').innerHTML = this.createChartBodyTemplate();
   }
 
