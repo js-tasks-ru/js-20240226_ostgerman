@@ -57,8 +57,7 @@ export default class SortableTable extends SortableTableV2 {
     await this.fetchData();
     this.isLoading = false;
     this.prepareSortedData();
-    this.update();
-    console.log('after render', this.data, this.subElements.body.children.length);
+    this.update();    
   }
 
   async sortOnServer(id, order) {
