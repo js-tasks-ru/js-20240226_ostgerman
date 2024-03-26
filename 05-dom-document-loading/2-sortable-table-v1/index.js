@@ -1,26 +1,5 @@
-const createElement = template => {
-  const element = document.createElement('div');
-  element.innerHTML = template;
-  return element.firstElementChild;
-};
-
-const sortStrings = (a, b) => a.localeCompare(b, ['ru', 'en'], {
-  caseFirst: "upper"
-});
-
-const sortNumbers = (a, b) => a - b;
-
-const sortFunctions = {
-  string: sortStrings,
-  number: sortNumbers
-};
-
-
-const typedSort = (arr, field, type, direction) => {
-  const invert = direction === 'asc' ? 1 : -1;
-  return [...arr].sort((a, b) => invert * sortFunctions[type](a[field], b[field]));
-};
-
+import { createElement, getSubElements } from '../../util/domUtil.js';
+import { typedSort } from '../../util/sort.js';
 
 export default class SortableTable {
 
@@ -28,81 +7,61 @@ export default class SortableTable {
   subElements;
   sortField;
   sortOrder;
+  isLoading = false;
 
   constructor(headerConfig = [], data = []) {
     this.headerConfig = headerConfig;
+    this.headerConfigElements = headerConfig.reduce((conf, el) => conf = { [el.id]: el, ...conf }, {});    
     this.data = data;
+    this.sortedData = data;
+    this.init();
+  }
+
+  init() {
     this.element = createElement(this.createTemplate());
-    this.subElements = this.getSubElements();
+    this.subElements = getSubElements(this.element);
   }
 
   sort(field, order) {
     if (field === this.sortField && order === this.sortOrder) {
       return;
     }
-    const sortColumn = this.getColumnElementById(field);
-    if (!sortColumn.dataset.sortable) {
-      return;
-    }
-    this.clearSorting();
-    this.setSortingForColumnElement(sortColumn, order);
     this.sortField = field;
     this.sortOrder = order;
-    this.getSubElementByType("body").innerHTML = this.createDataRowsTemplate();
+    this.prepareSortedData();
+    this.update();
   }
 
-  clearSorting() {
-    if (this.sortField) {
-      const sortColumn = this.getColumnElementById(this.sortField);
-      this.setSortingForColumnElement(sortColumn, null);
-    }
-  }
-
-  setSortingForColumnElement(columnElement, sorting) {
-    if (sorting) {
-      columnElement.dataset.order = sorting;
-    } else {
-      columnElement.removeAttribute('data-order');
-    }
-  }
-
-  getSubElements() {
-    return [...this.element.querySelectorAll(`[data-element]`)]
-      .reduce((res, node) => res = { [node.dataset.element]: node, ...res }, {});
-  }
-
-  getSubElementByType(type) {
-    return this.subElements[type];
+  prepareSortedData() {
+    if (!this.sortField) {
+      this.sortedData = this.data;
+      return;
+    }        
+    const sortType = this.headerConfigElements[this.sortField].sortType;
+    this.sortedData = typedSort(this.data, this.sortField, sortType, this.sortOrder);
   }
 
   getColumnElementById(id) {
-    return this.getSubElementByType("header")
-      .querySelector(`[data-id=${id}]`);
+    return this.subElements.header.querySelector(`[data-id=${id}]`);
   }
 
-  getSortedData() {
-    if (!this.sortField) {
-      return this.data;
+  getSortDataAttribute(id) {
+    if (this.sortField === id) {
+      return `data-order="${this.sortOrder}"`;
     }
-    const sortColumn = this.getColumnElementById(this.sortField);
-    const sortType = sortColumn.dataset.sorttype;    
-    return typedSort(this.data, this.sortField, sortType, this.sortOrder);
+    return '';
   }
 
-  createColumnCellTemplate({ id, title, sortable, sortType }) {
-    return `
-        <div class="sortable-table__cell" data-id="${id}" 
-            data-sortable="${sortable}" data-sortType="${sortType}">
+  createColumnRowTemplate() {
+    return this.headerConfig.map(({ id, title, sortable, sortType }) =>
+      `<div class="sortable-table__cell" data-id="${id}" 
+            data-sortable="${sortable}" data-sortType="${sortType}" ${this.getSortDataAttribute(id)}>
           <span>${title}</span>
           <span data-element="arrow" class="sortable-table__sort-arrow">
             <span class="sort-arrow"></span>
           </span>
-        </div>
-    `;
-  }
-
-  createColumnRowTemplate() {
-    return this.headerConfig.map(this.createColumnCellTemplate).join('');
+       </div>
+      `).join('');
   }
 
   createDataRowCellsTemplate(item) {
@@ -113,16 +72,27 @@ export default class SortableTable {
   }
 
   createDataRowsTemplate() {
-    return this.getSortedData().map(({ id, ...item }) => `
+    return this.sortedData.map(({ id, ...item }) => `
     <a href="/products/${id}" class="sortable-table__row">
       ${this.createDataRowCellsTemplate(item)}
     </a>
     `).join('');
   }
 
+
+  createTableClasses() {    
+    const effectiveClasses = ['sortable-table'];
+    if (this.isLoading) {
+      effectiveClasses.push('sortable-table_loading');
+    } else if (this.data.length === 0) {
+      effectiveClasses.push('sortable-table_empty');
+    }
+    return effectiveClasses.join(' ');    
+  }
+
   createTemplate() {
     return `
-    <div class="sortable-table">
+    <div class="${this.createTableClasses()}">
       <div data-element="header" class="sortable-table__header sortable-table__row">
         ${this.createColumnRowTemplate()}
       </div>
@@ -142,6 +112,12 @@ export default class SortableTable {
 
     </div>
     `;
+  }
+
+  update() {    
+    this.element.classList = this.createTableClasses();
+    this.subElements.header.innerHTML = this.createColumnRowTemplate();
+    this.subElements.body.innerHTML = this.createDataRowsTemplate();
   }
 
   remove() {
