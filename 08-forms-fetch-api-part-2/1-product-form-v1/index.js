@@ -213,8 +213,7 @@ export default class ProductForm {
       };
       const newImageElement = createElement(
         this.createImageTemplate(newImage)
-      );
-      this.toggleImageDeleteHandler(newImageElement, true);
+      );      
       this.subElements.imageList.appendChild(newImageElement);
     }
     finally {
@@ -226,31 +225,24 @@ export default class ProductForm {
   }
 
   handleImageDelete = (e) => {
-    const deleteButton = e.currentTarget;
-    const imageListElement = deleteButton.closest('[data-image-list-item]');
-    this.toggleImageDeleteHandler(imageListElement, false);
-    imageListElement.remove();
-  }
-
-  toggleImageDeleteHandler(element, add) {
-    if (add) {
-      element.querySelector('[data-image-delete]').addEventListener('click', this.handleImageDelete);
-    } else {
-      element.querySelector('[data-image-delete]').removeEventListener('click', this.handleImageDelete);
+    const deleteButton = e.target.closest('[data-image-delete]');
+    if (!deleteButton) {
+      return;
     }
-
+    const imageListElement = deleteButton.closest('[data-image-list-item]');        
+    imageListElement.remove();
   }
 
   createEventHandlers() {
     this.subElements.productForm.addEventListener('submit', this.handleSubmit);
     this.subElements.uploadImageButton.addEventListener('click', this.handleImageUpload);
-    [...this.subElements.imageList.children].forEach(el => this.toggleImageDeleteHandler(el, true));
+    this.subElements.imageList.addEventListener('click', this.handleImageDelete);
   }
 
   removeEventHandlers() {
     this.subElements.productForm.removeEventListener('submit', this.handleSubmit);
     this.subElements.uploadImageButton.removeEventListener('click', this.handleImageUpload);
-    [...this.subElements.imageList.children].forEach(el => this.toggleImageDeleteHandler(el, false));
+    this.subElements.imageList.removeEventListener('click', this.handleImageDelete);
   }
 
   remove() {
